@@ -6,11 +6,20 @@ import ConfigParser as cp
 import re
 import argparse
 import multiprocessing
-import subprocess
 import pprint
+import pexpect
+from subprocess import *
+
 
 fields = ['fasta','taxonomy','reference','reftaxonomy','name','count','dist','column','processors','fastq',\
             'output','contaxonomy']
+
+settings = ['processors', 'flow', 'file', 'biom', 'phylip', 'column', 'summary', 'fasta', 'name', 'group',\
+            'list', 'taxonomy', 'qfile', 'accnos', 'rabund', 'sabund', 'design', 'order', 'tree', 'shared',\
+            'ordergroup', 'count', 'relabund', 'sff', 'oligos', 'clear', 'seed', 'inputdir', 'outputdir' ]
+
+
+interactive_mode = False
 
 def define_fields(argparser):
     global fields
@@ -19,7 +28,7 @@ def define_fields(argparser):
 
 def main():
 
-    global fields
+    global fields, interactive_mode, settings
 
     #holds the params that either can come from the config
     # file or the command line args
@@ -57,14 +66,18 @@ def main():
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('batch_script',help='The mothur batch script with placeholders to fill in')
-    argparser.add_argument('--output_dir',help='The output dir to be used')
+    argparser.add_argument('batch_script',help='The mothur batch script with placeholders to fill in',nargs='?')
+    argparser.add_argument('--output_dir',help='The output dir to be used',default=os.getcwd())
+
 
     define_fields(argparser)
 
     parsed_args = argparser.parse_args()
 
-    batch_script = parsed_args.batch_script
+    if not parsed_args.batch_script:
+        interactive_mode = True
+    else:
+        batch_script = parsed_args.batch_script
 
     #print parsed_args
 
@@ -78,44 +91,44 @@ def main():
     pprint.pprint( params, indent=3)
 
 
+    if not interactive_mode:
 
-    # reads the mothur batch script
-    batch_string = open(batch_script, "r").read()
+        # reads the mothur batch script
+        batch_string = open(batch_script, "r").read()
 
-    p = re.compile('\\$[a-z_]+')
+        p = re.compile('\\$[a-z_]+')
 
-    new_vars = p.findall(batch_string)
+        new_vars = p.findall(batch_string)
 
-#    print new_vars
+    #    print new_vars
 
-    parsed_script_contents = batch_string
+        parsed_script_contents = batch_string
 
-    for (name,value) in params.iteritems():
-        parsed_script_contents = parsed_script_contents.replace('$'+name, value)
-
-    #print parsed_script_contents
-
-
-
-    parsed_batch_script_name = "." + os.path.basename(batch_script) + ".parsed"
-
-    parsed_batch = open(parsed_batch_script_name, "w")
-
-    parsed_batch.write(parsed_script_contents)
-
-    parsed_batch.close()
-
-    os.system('mothur ' + parsed_batch_script_name)
-
-    #mothur_out = subprocess.check_output( 'mothur ' + parsed_batch_script_name, shell=True)
-
-    #print mothur_out
-
-    os.remove(parsed_batch_script_name)
+        for (name,value) in params.iteritems():
+            parsed_script_contents = parsed_script_contents.replace('$'+name, value)
+        #print parsed_script_contents
+        parsed_batch_script_name = "." + os.path.basename(batch_script) + ".parsed"
+        parsed_batch = open(parsed_batch_script_name, "w")
+        parsed_batch.write(parsed_script_contents)
+        parsed_batch.close()
+        os.system('mothur ' + parsed_batch_script_name)
+        #mothur_out = subprocess.check_output( 'mothur ' + parsed_batch_script_name, shell=True)
+        #print mothur_out
+        os.remove(parsed_batch_script_name)
+    else: #interactive_mode
+        print "Entering in interactive mode"
+        mothur = pexpect.spawn('mothur')
+        mothur.before
+        filled_settings = set(params.keys()) & set(settings)
+        if "output_dir" in params.keys():
+            mothur.sendline("set.dir(output=%s)" % params['output_dir'] )
+        for setting in filled_settings:
+            mothur.sendline("set.current(%s=%s)" %(setting,params[setting]  ))
+        mothur.interact()
 
     output_dir = params['output_dir']
 
-    last_logfile = subprocess.check_output('ls -t *.logfile | head -n 1',\
+    last_logfile = check_output('ls -t *.logfile | head -n 1',\
                                            shell=True,cwd=output_dir).rstrip()
 
     print "Last logfile:", output_dir + os.sep + last_logfile

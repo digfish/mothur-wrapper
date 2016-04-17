@@ -1,0 +1,2 @@
+set.current(processors=$num_cpus)
+get.current()
