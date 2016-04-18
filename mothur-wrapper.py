@@ -12,7 +12,7 @@ from subprocess import *
 
 
 fields = ['fasta','taxonomy','reference','reftaxonomy','name','count','dist','column','processors','fastq',\
-            'output','contaxonomy']
+            'output','contaxonomy','start','end']
 
 settings = ['processors', 'flow', 'file', 'biom', 'phylip', 'column', 'summary', 'fasta', 'name', 'group',\
             'list', 'taxonomy', 'qfile', 'accnos', 'rabund', 'sabund', 'design', 'order', 'tree', 'shared',\
