@@ -24,13 +24,15 @@ As I said there are two modes of operation, on the image the `mothur` binary has
 In either of the modes, you can pass arguments in the command line like in the example:
 `mothur-wrapper.py --fasta example1.fasta --reference reference.fasta` and these argument values will override the ones you have in your `.mothur-wrapper.ini` .
 
-Just a piece of warning: the `mothur-wrapper.py` will write a new `.mothur-wrapper.ini`in the same directory where you execute it. It will always try first time to read the .ini file in your home root dir if you have one there. 
+Just a piece of warning: the `mothur-wrapper.py` will write a new `.mothur-wrapper.ini`in the same directory where you execute it. It will always try first time to read the .ini file in your home root dir if you have one there.
 
 In order to properly work, the `mothur` binary must already reside in a directory that it's already setted in your `$PATH`.
 
 Last changes:
 -------
+* The `current_files.summary`, which is new on mothur versions 1.37.xx file will be used instead of the last logfiles to capture the values used in mothur last execution.
+* Implemented verbose mode in order to avoid flooding the terminal.
 
 * Implemented interactive mode: if mothur-wrapper was invoked without a batch script, mothur is invoked in interactive mode just as the usual mothur works. All the settings filled from the console or the config file are passed to mothur directly.
-* Mothur-wrapper is implemented in python: for interactive mode you'll need to install the `pexpect` module: 
+* Mothur-wrapper is implemented in python: for interactive mode you'll need to install the `pexpect` module:
 	```pip install pexpect```

@@ -20,6 +20,7 @@ settings = ['processors', 'flow', 'file', 'biom', 'phylip', 'column', 'summary',
 
 
 interactive_mode = False
+verbose_mode = False
 
 def define_fields(argparser):
     global fields
@@ -28,7 +29,7 @@ def define_fields(argparser):
 
 def main():
 
-    global fields, interactive_mode, settings
+    global fields, interactive_mode, verbose_mode, settings
 
     #holds the params that either can come from the config
     # file or the command line args
@@ -67,12 +68,17 @@ def main():
     argparser = argparse.ArgumentParser()
 
     argparser.add_argument('batch_script',help='The mothur batch script with placeholders to fill in',nargs='?')
+    argparser.add_argument('--verbose','-v',help='Enable verbose mode',action='store_true')
+
     argparser.add_argument('--output_dir',help='The output dir to be used',default=os.getcwd())
 
 
     define_fields(argparser)
 
     parsed_args = argparser.parse_args()
+
+    if parsed_args.verbose:
+        verbose_mode = True
 
     if not parsed_args.batch_script:
         interactive_mode = True
@@ -87,17 +93,16 @@ def main():
        if value is not None:
          params[name] = value
 
-    print "%s will use the following parameters:" % (exec_name)
-    pprint.pprint( params, indent=3)
+    if verbose_mode:
+        print "%s will use the following parameters:" % (exec_name)
+        pprint.pprint( params, indent=3)
 
 
     if not interactive_mode:
 
         # reads the mothur batch script
         batch_string = open(batch_script, "r").read()
-
         p = re.compile('\\$[a-z_]+')
-
         new_vars = p.findall(batch_string)
 
     #    print new_vars
@@ -128,31 +133,41 @@ def main():
 
     output_dir = params['output_dir']
 
-    last_logfile = check_output('ls -t *.logfile | head -n 1',\
-                                           shell=True,cwd=output_dir).rstrip()
+    last_logfile = ""
+    if os.path.isfile( output_dir + os.sep + 'current_files.summary'):
+        if verbose_mode:
+            print ("Found current_files.summary in " + output_dir  + " : it will used !")
+            last_logfile =  output_dir + os.sep + 'current_files.summary'
+    else:
+        last_logfile = check_output('ls -t *.logfile | head -n 1',\
+                                               shell=True,cwd=output_dir).rstrip()
+        last_logfile =  output_dir + os.sep + last_logfile
+        if verbose_mode:
+            print "Last logfile:", last_logfile
 
-    print "Last logfile:", output_dir + os.sep + last_logfile
-
-    log_content = open(output_dir + os.sep + last_logfile,'r').read()
+    log_content = open(last_logfile,'r').read()
 
     p = re.compile('[a-zA-Z0-9_]+?=[a-zA-Z0-9/_.]+')
 
     new_vars = p.findall(log_content)
 
-    print "%s caught the following vars:" % (exec_name)
-
-    pprint.pprint(new_vars, indent=3)
+    if verbose_mode:
+        print "%s caught the following vars:" % (exec_name)
+        pprint.pprint(new_vars, indent=3)
 
     if len(new_vars) > 0:
-
         for match in new_vars:
-
             name,value = match.split('=')
             # skips pairs with value as 'current', avoiding to include them in the config file
             if value == 'current': continue
             params[name] = value
-
         new_config_filename = os.getcwd() + os.sep + os.path.basename( config_filename )
+
+        if os.environ['HOME'] == os.getcwd():
+            print ("WARNING: the " +  config_filename + " will not be written in order to not overwrite the one that is in " + \
+                   "your home root dir, please next time run mothur from another dir besides your home root dir in order to avoid conflicts. ")
+            return
+
         store_config(params,new_config_filename)
 
 def store_config(params,new_config_filename):
