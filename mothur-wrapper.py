@@ -132,12 +132,8 @@ def main():
             print ("Found current_files.summary in " + output_dir  + " : it will used !")
     else:
         last_logfile = get_most_recent_logfile_on_dir( output_dir )
-
-        last_logfile =  output_dir + os.sep + last_logfile
-
-        if not os.path.is_file(os.getcwd()):
-            last_logfile = get_most_recent_logfile_on_dir
-
+        if not os.path.is_file(last_logfile):
+            last_logfile = get_most_recent_logfile_on_dir (os.getcwd())
         if verbose_mode:
             print "Last logfile found:", last_logfile
 
@@ -168,7 +164,8 @@ def main():
         store_config(params,new_config_filename)
 
 def get_most_recent_logfile_on_dir(output_dir):
-    return check_output('ls -t *.logfile | head -n 1',shell=True,cwd=output_dir).rstrip()
+    return output_dir + \
+        os.sep + check_output('ls -t *.logfile | head -n 1',shell=True,cwd=output_dir).rstrip()
 
 def store_config(params,new_config_filename):
     config = cp.ConfigParser()
