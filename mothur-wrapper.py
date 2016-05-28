@@ -44,23 +44,27 @@ def main():
 
     config_filename = '.' + exec_name + '.ini'
 
+    config_exists = True
+
     if (not os.path.exists(os.getcwd() + os.sep + config_filename)):
         if (not os.path.exists(os.environ['HOME'] + os.sep + config_filename)):
             print config_filename, "does not exist!"
-            return
+            config_exists = False
         else:
             config_filename = os.environ['HOME'] + os.sep + config_filename
     else:
         config_filename = os.getcwd() + os.sep + config_filename
 
-    print "Found config file at ", config_filename
+    if config_exists:
 
-    config_parser = cp.ConfigParser()
+        print "Found config file at ", config_filename
 
-    config_parser.read(config_filename)
+        config_parser = cp.ConfigParser()
 
-    for (name,value) in config_parser.items('config'):
-        params[name] = value
+        config_parser.read(config_filename)
+
+        for (name,value) in config_parser.items('config'):
+            params[name] = value
 
     #print params
 
